@@ -82,14 +82,21 @@ var Viewer = new Vue({
                 progressColor: 'purple'
             });
             //ee.backend.peaks  = wavesurfer.backend.getPeaks(Math.floor(wavesurfer.backend.buffer.duration*2));
-            ee.backend.buffer = wavesurfer.backend.buffer;
+            //ee.backend.buffer = wavesurfer.backend.buffer;
+            
+            //ee.backend.buffer.numberOfChannels =1;
             /*
             var arr =[];for(let i=0;i<wavesurfer.backend.buffer.length;i++){arr.push(1);}
             wavesurfer.backend.buffer.getChannelData(0).set(arr);
             */
-            ee.drawBuffer();
             ee.loaded = true;
             ee.isReady =true;
+            /*
+            ee.on('ready', function () {
+                ee.backend.buffer.duration =10;
+            });
+            */
+            ee.drawBuffer();
         },
 
         LoadFile:function LoadFile() {
@@ -148,12 +155,11 @@ var Viewer = new Vue({
             //this.Encoder.HeaderNode.push(wavesurfer.backend.buffer.sampleRate);
 
             //Write
-
             //圖片寬度 Need odd will Cut add 0
             if(this.Encoder.EncodeLevel == "LEVEL5")
-                ImageSize = "" + (Math.ceil(Math.sqrt(wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels))).toString(16);
+                ImageSize = "" + (Math.ceil(Math.sqrt(wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels+64+21))).toString(16);
             else
-                ImageSize = "" + (Math.ceil(Math.sqrt(wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels/4))).toString(16);
+                ImageSize = "" + (Math.ceil(Math.sqrt((wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels+64+21)/4))).toString(16);
 
             if(ImageSize.length%2 > 0 && ImageSize.length <9){
                 let TmpSize = "" + ImageSize;
@@ -169,17 +175,13 @@ var Viewer = new Vue({
                 }
             }
             
-            console.log(ImageSize)    
             //???
             for (let i = 0,n=0; n < ImageSize.length; i++,n+=2) {
                 //FileWeight[i] = String.fromCharCode(parseInt(ImageSize[n-1]+ImageSize[n-2], 16));
                 let TmpStr =ImageSize[i+1]+ImageSize[i];
-                console.log(TmpStr);
-                console.log(parseInt(ImageSize[i+1]+ImageSize[i], 16));
                 FileWeight[i] = String.fromCharCode(parseInt(ImageSize.charAt(i+1)+ImageSize.charAt(i), 16));
             }
             aaaa =FileWeight;
-            console.log(FileWeight);
             this.Encoder.HeaderNode = "\x42\x4D"+FileSize[0]+FileSize[1]+FileSize[2]+FileSize[3]+"\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00"+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+"\x01\x00\x20\x00\x00\x00\x00\x00\xE1\x00\x00\xC4\x0E\x00\x00\xC4\x0E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             
             fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.HeaderNode,{encoding: 'ascii',flag:'w'}, (error) => {
@@ -199,115 +201,139 @@ var Viewer = new Vue({
                 this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
             }
             */
+            let numberOfChannelHex = String.fromCharCode(parseInt(wavesurfer.backend.buffer.numberOfChannels, 16));
+            let sampleRateHex = "";
+            //String.fromCharCode(parseInt(wavesurfer.backend.buffer.sampleRate, 16));
+
+            let TmpSampleRateStr = wavesurfer.backend.buffer.sampleRate.toString();
+            for(let i=0;i<10;i++){
+                if(i<10-TmpSampleRateStr.length){
+                    sampleRateHex += '\x00';
+                }else{
+                    sampleRateHex += String.fromCharCode(parseInt(TmpSampleRateStr[i-10+TmpSampleRateStr.length], 16));
+                }
+            }
+
+            let samplelengthHex = "";
+            //String.fromCharCode(parseInt(wavesurfer.backend.buffer.length, 16));
+            let TmpSampleLengthStr = wavesurfer.backend.buffer.length.toString();
+            for(let i=0;i<10;i++){
+                if(i<10-TmpSampleLengthStr.length){
+                    samplelengthHex += '\x00';
+                }else{
+                    samplelengthHex += String.fromCharCode(parseInt(TmpSampleLengthStr[i-10+TmpSampleLengthStr.length], 16));
+                }
+            }
 
             if(this.Encoder.EncodeLevel == "LEVEL0"){
                 //無加密
-                key = sha256.array("0.41877603947095854");
+                key =  sha256.hex("0.41877603947095854");
+                Key2 = sha256.hex(key);
+                this.Encoder.AudioData = key + numberOfChannelHex + sampleRateHex + samplelengthHex.toString(16) + Key2;
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                 //線性位移加密
                 key = sha256.array("0.36310229221374724");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL2"){
                 //交錯級數加密
                 key = sha256.array("0.2494377482367558");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL3"){
                 //弦波加密sin
                 key = sha256.array("0.8556336438849041");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL4"){
                 //弦波加密cos
                 key = sha256.array("0.12240691495231171");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                 //亂數加密
                 key = sha256.array("0.3035754752099231");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     if(i%4 == 0)
-                        this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                     else
-                        this.Encoder.AudioData+=(Math.floor(Math.random()*255)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(Math.floor(Math.random()*255));
                 }
             }else{
                 //無加密
                 key = sha256("0.41877603947095854");
+                Key2 = sha256(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                    this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }
 
-
-            Key2 = sha256(key);
             /// Key + Header + Key2
             //Write Channl0 Data
-            fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{flag:'a+'}, (error) => {
+            fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'}, (error) => {
                 if (error) throw error;
             });
 
             //Clear Tmp Data
             this.Encoder.AudioData = "";
 
-            if(wavesurfer.backend.buffer.numberOfChannels >1){
+            if(wavesurfer.backend.buffer.numberOfChannels > 1){
                 if(this.Encoder.EncodeLevel == "LEVEL0"){
                     //無加密
-                    key = sha256.array("0.41877603947095854");
                     for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                        this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                     //線性位移加密
-                    key = sha256.array("0.36310229221374724");
                     for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                        this.Encoder.AudioData+=((Math.ceil(128+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2))%255).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL2"){
                     //交錯級數加密
-                    key = sha256.array("0.2494377482367558");
                     for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                        this.Encoder.AudioData+=(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
-                    console.log("IsWork")
                                     
                 }else if (this.Encoder.EncodeLevel == "LEVEL3"){
                     //弦波加密sin
-                    key = sha256.array("0.8556336438849041");
                     for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                        this.Encoder.AudioData+=(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL4"){
                     //弦波加密cos
                     for(let j=0;j<wavesurfer.backend.buffer.length;j++){
-                        this.Encoder.AudioData+=(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[j]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                     //亂數加密
                     for(let j=0;j<wavesurfer.backend.buffer.length;j++){
                         if(j%4 == 0)
-                            this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[j]+1)/2)).toString(16);
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                         else
-                            this.Encoder.AudioData+=(Math.floor(Math.random()*255)).toString(16);
+                            this.Encoder.AudioData+=String.fromCharCode(Math.floor(Math.random()*255));
                     }
                 }else{
                     //無加密
                     for(let j=0;j<wavesurfer.backend.buffer.length;j++){
-                        this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[j]+1)/2)).toString(16);
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
-                    console.log("UWork")
                 }
     
     
-                fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{flag:'a+'}, (error) => {
+                fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'}, (error) => {
                     if (error) throw error;
                 });
             }
