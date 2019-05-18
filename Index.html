@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+    <head>
+        <meta charset="utf-8">
+        <!--meta http-equiv="X-UA-Compatible" content="IE=edge"-->
+        <title>Image Audio Player</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" media="screen" href="./Source/css/tocas.css">
+        <script src="https://unpkg.com/wavesurfer.js"></script>
+        <script src="./Source/js/include.js"></script>
+        <script src="./Source/js/vue.min.js"></script>
+        <script src="./Source/js/tocas.js"></script>
+    </head>
+
+    <body>
+        <div class="ts centered grid">
+            <div class="twelve wide column">
+                <div id="Viewer" class="content">
+                    <div v-if="ErrorEvent" class="ts active snackbar">
+                        <div class="content">{{ErrorMessage}}</div>
+                        <a @click="CheckError()" class="action">確定</a>
+                    </div><br>
+
+                    <h1 class="ts center aligned header">{{NowType}}</h1>
+                    <a class="ts center aligned small header" target="WhoMake" href="https://github.com/Lian0123/">The Program From Lian0123</a>
+
+                    <div class="ts top attached tabbed menu">
+                        <a class="item" v-bind:class="Page1" @click="SetPage1()">編碼器</a>
+                        <a class="item" v-bind:class="Page2" @click="SetPage2()">解碼器</a>
+                    </div>
+                    
+                    <div class="file audio outline icon ts bottom attached tab segment" v-bind:class="Page1">
+                            <h3 class="ts header"><i class="file audio outline icon"></i>輸入音檔</h3>
+                            <div class="ts grid">
+                                <div class="stretched column">
+                                    <div class="ts fluid">
+                                        <input type="file" @change="GetEncodePath">
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="LoadFile()">開啟</button>
+                                </div>
+                            </div> 
+                            
+                            <div id="waveform"></div>
+                            
+                            <div v-if="Encoder.IsLoadFile" class="ts grid">
+                                <div class="column">
+                                    <button class="ts button" @click="if(wavesurfer.isPlaying()){wavesurfer.pause();}else{wavesurfer.play();}">播放</button>
+                                </div>
+
+                                <div class="column">
+                                    <button class="ts button" @click="wavesurfer.stop();">停止</button>
+                                </div>
+
+                            </div>
+    
+                            <h3  v-if="Encoder.IsLoadFile" class="ts header"><i class="lock outline icon"></i>選擇加密法</h3>
+                            <div v-if="Encoder.IsLoadFile" class="ts grid">
+                                <div class="stretched column">
+                                    <div class="ts fluid">
+                                        <select class="ts basic dropdown" v-model="Encoder.EncodeLevel">
+                                            <option v-for="Option in Encoder.Options" v-bind:value="Option.value">
+                                                {{ Option.text }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="StartEncode()">建立</button>
+                                </div>
+                            </div>
+
+                            <h3  v-if="Encoder.IsOutFile" class="ts header"><i class="file icon"></i>匯出影像</h3>
+                            <div v-if="Encoder.IsOutFile" class="ts grid">
+                                <div class="stretched column">
+                                    <div class="ts fluid">
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="DownloadImg()">下載</button>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div class="ts bottom attached tab segment" v-bind:class="Page2">
+                        
+                            <h3 class="ts header"><i class="file icon"></i>輸入圖檔</h3>
+                            <div class="ts grid">
+                                <div class="stretched column">
+                                    <div class="ts fluid">
+                                        <input type="file" @change="GetEncodePath">
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="LoadFile()">開啟</button>
+                                </div>
+                            </div>
+    
+                            <h3  v-if="Decoder.IsLoadFile" class="ts header"><i class="unlock outline icon"></i>選擇解密法</h3>
+                            <div v-if="Decoder.IsLoadFile" class="ts grid">
+                                <div class="stretched column">
+                                    <div class="ts fluid">
+                                            <select class="ts basic dropdown" v-model="Decoder.DecodeLevel">
+                                                <option v-for="Option in Decoder.Options" v-bind:value="Option.value">
+                                                    {{ Option.text }}
+                                                </option>
+                                            </select>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="StartDecode()">解密</button>
+                                </div>
+                            </div>
+
+                            <h3  v-if="Decoder.IsOutFile" class="ts header"><i class="file audio outline icon"></i>匯出音檔</h3>
+                            <div v-if="Decoder.IsOutFile" class="ts grid">
+                                <div class="stretched column">.
+                                </div>
+                                <div class="column">
+                                    <button class="ts button" @click="DownloadAudio()">下載</button>
+                                </div>
+                            </div>
+                    </div>
+                    <!--Img/AudioPlayer-->
+                </div>
+            </div>
+        </div> 
+
+
+       
+    </body>
+</html>
+
+
+<script src="./Source/js/ViewCtl.js"></script>
