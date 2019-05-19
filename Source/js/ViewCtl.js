@@ -162,6 +162,7 @@ var Viewer = new Vue({
                 ImageSize = "" + (Math.ceil(Math.sqrt((wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels+64+21)/4))).toString(16);
 
             if(ImageSize.length%2 > 0 && ImageSize.length <9){
+                /*
                 let TmpSize = "" + ImageSize;
                 ImageSize = "";
                 for(let i=0;i<=TmpSize.length;i++){
@@ -172,14 +173,15 @@ var Viewer = new Vue({
                     }else{
                         ImageSize += TmpSize[i];
                     }
-                }
+                }*/
+                ImageSize = "0" + ImageSize
             }
             
             //???
             for (let i = 0,n=0; n < ImageSize.length; i++,n+=2) {
                 //FileWeight[i] = String.fromCharCode(parseInt(ImageSize[n-1]+ImageSize[n-2], 16));
                 let TmpStr =ImageSize[i+1]+ImageSize[i];
-                FileWeight[i] = String.fromCharCode(parseInt(ImageSize.charAt(i+1)+ImageSize.charAt(i), 16));
+                FileWeight[i] = String.fromCharCode(parseInt(ImageSize.charAt(ImageSize.length-2-n)+ImageSize.charAt(ImageSize.length-1-n), 16));
             }
             aaaa =FileWeight;
             this.Encoder.HeaderNode = "\x42\x4D"+FileSize[0]+FileSize[1]+FileSize[2]+FileSize[3]+"\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00"+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+"\x01\x00\x20\x00\x00\x00\x00\x00\xE1\x00\x00\xC4\x0E\x00\x00\xC4\x0E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -233,6 +235,7 @@ var Viewer = new Vue({
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
+                console.log("THIS Work")
             }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                 //線性位移加密
                 key = sha256.array("0.36310229221374724");
