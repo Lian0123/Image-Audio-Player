@@ -1,4 +1,4 @@
-var sound;var wavesurfer,Dwavesurfer,ee;var aaaa;
+var sound;var wavesurfer,Dwavesurfer,ee;
 var Viewer = new Vue({
     el:"#Viewer",
     data:{
@@ -35,7 +35,9 @@ var Viewer = new Vue({
                         { text: '無解密',      value: 'LEVEL0' },
                         { text: '線性位移解密', value: 'LEVEL1' },
                         { text: '交錯級數解密', value: 'LEVEL2' },
-                        { text: '弦波解密',    value: 'LEVEL3' }
+                        { text: 'sin(x)解密',  value: 'LEVEL3' },
+                        { text: 'cos(x)解密',  value: 'LEVEL4' },
+                        { text: '亂數解密',     value: 'LEVEL5' }
             ]
         },
         
@@ -149,10 +151,6 @@ var Viewer = new Vue({
             
             //Get WaveSurfer Audio Header
             let FileHeader;
-            //this.Encoder.HeaderNode.push(wavesurfer.backend.buffer.length);
-            //this.Encoder.HeaderNode.push(wavesurfer.backend.buffer.duration);
-            //this.Encoder.HeaderNode.push(wavesurfer.backend.buffer.numberOfChannels);
-            //this.Encoder.HeaderNode.push(wavesurfer.backend.buffer.sampleRate);
 
             //Write
             //圖片寬度 Need odd will Cut add 0
@@ -183,30 +181,17 @@ var Viewer = new Vue({
                 let TmpStr =ImageSize[i+1]+ImageSize[i];
                 FileWeight[i] = String.fromCharCode(parseInt(ImageSize.charAt(ImageSize.length-2-n)+ImageSize.charAt(ImageSize.length-1-n), 16));
             }
-            aaaa =FileWeight;
+
             this.Encoder.HeaderNode = "\x42\x4D"+FileSize[0]+FileSize[1]+FileSize[2]+FileSize[3]+"\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00"+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+"\x01\x00\x20\x00\x00\x00\x00\x00\xE1\x00\x00\xC4\x0E\x00\x00\xC4\x0E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             
             fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.HeaderNode,{encoding: 'ascii',flag:'w'}, (error) => {
                 if (error) throw error;
             });
-            /*
-            var WriteFile = fs.createWriteStream(fileName, {
-                encoding: 'ascii',
-              });
-              WriteFile.write(this.Encoder.HeaderNode);
-              WriteFile.end();
-*/
-            //正規->[0~1]->[0~255]
-            //push->AudioArray
-            /*
-            for(let i=0;i<wavesurfer.backend.buffer.length;i++){
-                this.Encoder.AudioData+=(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)).toString(16);
-            }
-            */
+
             let numberOfChannelHex = String.fromCharCode(parseInt(wavesurfer.backend.buffer.numberOfChannels, 16));
+            
             let sampleRateHex = "";
             //String.fromCharCode(parseInt(wavesurfer.backend.buffer.sampleRate, 16));
-
             let TmpSampleRateStr = wavesurfer.backend.buffer.sampleRate.toString();
             for(let i=0;i<10;i++){
                 if(i<10-TmpSampleRateStr.length){
@@ -238,36 +223,36 @@ var Viewer = new Vue({
                 console.log("THIS Work")
             }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                 //線性位移加密
-                key = sha256.array("0.36310229221374724");
-                Key2 = sha256(key);
+                key = sha256.hex("0.36310229221374724");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL2"){
                 //交錯級數加密
-                key = sha256.array("0.2494377482367558");
-                Key2 = sha256(key);
+                key = sha256.hex("0.2494377482367558");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL3"){
                 //弦波加密sin
-                key = sha256.array("0.8556336438849041");
-                Key2 = sha256(key);
+                key = sha256.hex("0.8556336438849041");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL4"){
                 //弦波加密cos
-                key = sha256.array("0.12240691495231171");
-                Key2 = sha256(key);
+                key = sha256.hex("0.12240691495231171");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                 //亂數加密
-                key = sha256.array("0.3035754752099231");
-                Key2 = sha256(key);
+                key = sha256.hex("0.3035754752099231");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     if(i%4 == 0)
                         this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
@@ -276,8 +261,8 @@ var Viewer = new Vue({
                 }
             }else{
                 //無加密
-                key = sha256("0.41877603947095854");
-                Key2 = sha256(key);
+                key = sha256.hex("0.41877603947095854");
+                Key2 = sha256.hex(key);
                 for(let i=0;i<wavesurfer.backend.buffer.length;i++){
                     this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
@@ -352,29 +337,47 @@ var Viewer = new Vue({
 
         StartDecode: function StartDecode() {
             let Key        = [] ,
-                Key2       = [] ;
-            
-            let Channel1 = [],
+                Key2       = [] ,
+                Channel1 = [],
                 Channel2 = [];
+
+            let HaveChannel2  = false,
+                PointSum      = 0,
+                sampleRateSum = 44100;
+
+            if(this.Encoder.IsLoadFile){
+                wavesurfer.destroy()
+            }
 
             this.Encoder.IsLoadFile = false ;
             this.Encoder.IsOutFile  = false ;
             this.Decoder.IsOutFile  = true  ;
             
+            //Make A Buffer
+            //Get Key(32) + 1 + 10 +10 + Key2(32)
+
             if(this.Decoder.DecodeLevel == "LEVEL0" && key == [93, 223, 154, 134, 6, 49, 56, 207, 131, 76, 119, 180, 144, 247, 179, 87, 41, 252, 68, 241, 115, 173, 52, 8, 24, 110, 84, 204, 253, 222, 101, 33]){
                 //無解密
                 //Check Header...
                     //if channel<2 , let channel2 = []
                 //Push Channel1
                 //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    //Channel1.push(/* Get Data Point */)
+                }
+
                 for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
                     Dwavesurfer.backend.buffer.getChannelData(0)[i] = Channel1[i]/255;
                 }
 
                 //當Channel2存在
-                if(!isNaN(Channel2[j])){
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        //Channel2.push(/* Get Data Point */)
+                    }
+
                     for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
-                        Dwavesurfer.backend.buffer.getChannelData(0)[j] = Channel2[j]/255;
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = Channel2[j]/255;
                     }
                 }
             }else if (this.Decoder.DecodeLevel == "LEVEL1" && key == [176, 203, 190, 183, 244, 187, 199, 247, 64, 214, 10, 145, 161, 169, 13, 145, 145, 78, 212, 179, 27, 38, 59, 210, 151, 104, 57, 237, 197, 236, 139, 20]){
@@ -383,6 +386,10 @@ var Viewer = new Vue({
                     //if channel<2 , let channel2 = []
                 //Push Channel1
                 //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    //Channel1.push(/* Get Data Point */)
+                }
+
                 for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
                     if(Channel1[i]<47){
                         Channel1+=255;
@@ -391,12 +398,16 @@ var Viewer = new Vue({
                 }
 
                 //當Channel2存在
-                if(!isNaN(Channel2[j])){
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        //Channel2.push(/* Get Data Point */)
+                    }
+
                     for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
                         if(Channel2[j]<47){
                             Channel2+=255;
                         }
-                        Dwavesurfer.backend.buffer.getChannelData(0)[j] = (Channel2[j]-47)/255;
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = (Channel2[j]-47)/255;
                     }
                 }
             }else if (this.Decoder.DecodeLevel == "LEVEL2" && key == [75, 95, 252, 42, 46, 81, 254, 191, 114, 229, 11, 175, 215, 6, 185, 98, 4, 250, 190, 162, 10, 87, 133, 89, 187, 214, 33, 144, 113, 70, 33, 95]){
@@ -405,6 +416,10 @@ var Viewer = new Vue({
                     //if channel<2 , let channel2 = []
                 //Push Channel1
                 //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    //Channel1.push(/* Get Data Point */)
+                }
+
                 for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
                     let DeCodeKey = Math.pow(-1,i%2)*0.48354512*i;
                     if(Channel1[i]<DeCodeKey){
@@ -414,13 +429,17 @@ var Viewer = new Vue({
                 }
 
                 //當Channel2存在
-                if(!isNaN(Channel2[0])){
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        //Channel2.push(/* Get Data Point */)
+                    }
+
                     for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
                         let DeCodeKey = Math.pow(-1,j%2)*0.48354512*j;
                         if(Channel2[j]<DeCodeKey){
                             Channel2+=255;
                         }
-                        Dwavesurfer.backend.buffer.getChannelData(0)[j] = (Channel2[i]-DeCodeKey)/255;
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = (Channel2[i]-DeCodeKey)/255;
                     }
                 }
             }else if (this.Decoder.DecodeLevel == "LEVEL3" && key == [106, 88, 127, 160, 6, 50, 43, 132, 152, 97, 111, 76, 120, 248, 98, 138, 136, 172, 106, 122, 191, 80, 24, 109, 112, 84, 67, 227, 12, 134, 57, 42]){
@@ -429,6 +448,10 @@ var Viewer = new Vue({
                     //if channel<2 , let channel2 = []
                 //Push Channel1
                 //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    //Channel1.push(/* Get Data Point */)
+                }
+
                 for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
                     let DeCodeKey = Math.sin(i);
                     if(Channel1[i]<DeCodeKey){
@@ -438,13 +461,17 @@ var Viewer = new Vue({
                 }
 
                 //當Channel2存在
-                if(!isNaN(Channel2[0])){
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        //Channel2.push(/* Get Data Point */)
+                    }
+
                     for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
                         let DeCodeKey = Math.sin(j);
                         if(Channel2[j]<DeCodeKey){
                             Channel2+=255;
                         }
-                        Dwavesurfer.backend.buffer.getChannelData(0)[j] = (Channel2[i]-DeCodeKey)/255;
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = (Channel2[i]-DeCodeKey)/255;
                     }
                 }
             }else if (this.Decoder.DecodeLevel == "LEVEL4" && key == [38, 202, 20, 136, 255, 96, 38, 107, 248, 251, 222, 172, 219, 72, 39, 156, 241, 172, 8, 192, 41, 71, 203, 119, 160, 202, 196, 192, 126, 178, 92, 131]){
@@ -453,6 +480,10 @@ var Viewer = new Vue({
                     //if channel<2 , let channel2 = []
                 //Push Channel1
                 //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    //Channel1.push(/* Get Data Point */)
+                }
+
                 for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
                     let DeCodeKey = Math.cos(i);
                     if(Channel1[i]<DeCodeKey){
@@ -462,13 +493,45 @@ var Viewer = new Vue({
                 }
 
                 //當Channel2存在
-                if(!isNaN(Channel2[0])){
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        //Channel2.push(/* Get Data Point */)
+                    }
+
                     for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
                         let DeCodeKey = Math.cos(j);
                         if(Channel2[j]<DeCodeKey){
                             Channel2+=255;
                         }
-                        Dwavesurfer.backend.buffer.getChannelData(0)[j] = (Channel2[i]-DeCodeKey)/255;
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = (Channel2[i]-DeCodeKey)/255;
+                    }
+                }
+            }else if(this.Decoder.DecodeLevel == "LEVEL5" && key == [149, 156, 93, 104, 183, 161, 215, 213, 106, 194, 128, 24, 254, 4, 156, 189, 38, 109, 113, 174, 110, 113, 123, 173, 68, 0, 73, 203, 150, 182, 168, 57]){
+                //亂數解密
+                //Check Header...
+                    //if channel<2 , let channel2 = []
+                //Push Channel1
+                //Push Channel2
+                for(let i=0;i<PointSum;i++){
+                    if(i%4==0){
+                        //Channel1.push(/* Get Data Point */)
+                    }
+                }
+
+                for(let i=0;i<Dwavesurfer.backend.buffer.length;i++){
+                    Dwavesurfer.backend.buffer.getChannelData(0)[i] = Channel1[i]/255;
+                }
+
+                //當Channel2存在
+                if(HaveChannel2){
+                    for(let i=0;i<PointSum;i++){
+                        if(i%4==0){
+                            //Channel2.push(/* Get Data Point */)
+                        }
+                    }
+
+                    for(let j=0;j<Dwavesurfer.backend.buffer.length;j++){
+                        Dwavesurfer.backend.buffer.getChannelData(1)[j] = Channel2[j]/255;
                     }
                 }
             }else{
