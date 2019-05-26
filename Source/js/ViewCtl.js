@@ -73,49 +73,18 @@ var Viewer = new Vue({
             this.Decoder.FilePath = event.target.files[0].path;
             console.log(event.target.files)            
         },
-        Copy:function Copy() {
-            //wavesurfer.play()
-            /*
-            var tmmp =  wavesurfer.backend.buffer.getChannelData(0);
-            wavesurfer.backend.buffer.getChannelData(1).set(wavesurfer.backend.buffer.getChannelData(0));
-            wavesurfer.backend.buffer.getChannelData(0).set(tmmp);
-            */
-           
-            //var FFF = wavesurfer.backend.getPeaks(4400);
-            //var FFF = wavesurfer.backend.getPeaks(10);
-            ee = WaveSurfer.create({
-                container: '#waveform',
-                waveColor: 'violet',
-                progressColor: 'purple'
-            });
-            //ee.backend.peaks  = wavesurfer.backend.getPeaks(Math.floor(wavesurfer.backend.buffer.duration*2));
-            //ee.backend.buffer = wavesurfer.backend.buffer;
-            
-            //ee.backend.buffer.numberOfChannels =1;
-            /*
-            var arr =[];for(let i=0;i<wavesurfer.backend.buffer.length;i++){arr.push(1);}
-            wavesurfer.backend.buffer.getChannelData(0).set(arr);
-            */
-            ee.loaded = true;
-            ee.isReady =true;
-            /*
-            ee.on('ready', function () {
-                ee.backend.buffer.duration =10;
-            });
-            */
-            ee.drawBuffer();
-        },
 
         LoadFile:function LoadFile() {
             if(this.NowType == "編碼器"){
-                this.Decoder.IsLoadFile = false ;
-                this.Decoder.IsOutFile  = false ;
-
                 if(this.Encoder.IsLoadFile){
                     wavesurfer.destroy()
                 }
-                    
 
+                this.Decoder.IsLoadFile = false ;
+                this.Decoder.IsOutFile  = false ;
+                this.Encoder.IsLoadFile = false ;
+                this.Encoder.IsOutFile = false ;
+                    
                 //FS.read & Load
                 if (this.Encoder.FilePath != "") {
                     wavesurfer = WaveSurfer.create({
@@ -124,24 +93,21 @@ var Viewer = new Vue({
                         progressColor: 'purple'
                     });
                     wavesurfer.load(this.Encoder.FilePath);
-                    Viewer.Encoder.IsLoadFile = true ;
-                    
+                    Viewer.Encoder.IsLoadFile = true;
                 } else {
                     Viewer.ErrorMessageBox("輸入檔案不能為空");
                 }
                 
             }else if(this.NowType == "解碼器"){
-                if(this.Encoder.IsLoadFile){
+                if(this.Decoder.IsLoadFile){
                     Dwavesurfer.destroy();
                 }
                 
                 this.Encoder.IsLoadFile = false ;
                 this.Encoder.IsOutFile  = false ;
-                //FS.read
-                //正規->[0~255]
-                //Get Info x,y
-                //push->AudioArray
-                let FileTest = true;
+                this.Decoder.IsLoadFile = false ;
+                this.Decoder.IsOutFile = false ;
+
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
                         FileTest = false;
@@ -168,22 +134,24 @@ var Viewer = new Vue({
 
                         //console.log(buffer.slice(0, 145));
                         //console.log(buffer.slice(85, 96));
-
-                        if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString() ){
-                            console.log("LEVEL0");
+                        
+                        if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString()){
+                            Viewer.Decoder.DecodeLevel = "LEVEL0";
                         }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 101, 100, 99, 53, 101, 99, 56, 98, 49, 52]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 53, 48, 101, 55, 50, 53, 98, 49, 97, 52]).toString()){
-                            console.log("LEVEL1");
+                            Viewer.Decoder.DecodeLevel = "LEVEL1";
                         }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([49, 57, 48, 55, 49, 52, 54, 50, 49, 53, 102]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 56, 49, 54, 52, 102, 54, 98, 55, 57, 56]).toString()){
-                            console.log("LEVEL2");
+                            Viewer.Decoder.DecodeLevel = "LEVEL2";
                         }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([51, 101, 51, 48, 99, 56, 54, 51, 57, 50, 97]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([98, 48, 100, 52, 100, 97, 49, 99, 56, 99, 48]).toString()){
-                            console.log("LEVEL3");
+                            Viewer.Decoder.DecodeLevel = "LEVEL3";
                         }else  if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 48, 55, 101, 98, 50, 53, 99, 56, 51]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([52, 98, 100, 57, 50, 52, 49, 97, 51, 99, 57]).toString()){
-                            console.log("LEVEL4");
+                            Viewer.Decoder.DecodeLevel = "LEVEL4";
                         }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 99, 98, 57, 54, 98, 54, 97, 56, 51, 57]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 57, 51, 57, 100, 97, 57, 99, 55, 98, 98]).toString()){
-                            console.log("LEVEL5");
+                            Viewer.Decoder.DecodeLevel = "LEVEL5";
                         }else{
-
+                            Viewer.ErrorMessageBox("解密選項選擇錯誤");
+                            return;
                         }
+                        
 
                         //Test Channel Sum
                         if(buffer[64]==2){
@@ -271,6 +239,13 @@ var Viewer = new Vue({
             
             //Get WaveSurfer Audio Header
             let FileHeader;
+
+            if(!wavesurfer.isReady){
+                this.ErrorMessageBox("不支援此輸入格式檔案");
+                this.Encoder.IsLoadFile = false ;
+                wavesurfer.destroy();
+                return;
+            }
 
             //Write
             //圖片寬度 Need odd will Cut add 0
@@ -377,7 +352,7 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                 //線性位移加密
@@ -388,7 +363,7 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(128+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL2"){
                 //交錯級數加密
@@ -399,7 +374,14 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    let OutLineTest = parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2));
+                    if(OutLineTest<0){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i+255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else if(OutLineTest>255){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i-255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else{
+                        this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                    }
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL3"){
                 //弦波加密sin
@@ -410,7 +392,14 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    let OutLineTest = parseInt(Math.floor(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2))
+                    if(OutLineTest<0){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.sin(i)+255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else if(OutLineTest>255){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.sin(i)-255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else{
+                        this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                    }
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL4"){
                 //弦波加密cos
@@ -421,7 +410,14 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    let OutLineTest = parseInt(Math.floor(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2))
+                    if(OutLineTest<0){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.cos(i)+255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else if(OutLineTest>255){
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.cos(i)-255+255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    }else{
+                        this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                    }
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                 //亂數加密
@@ -436,14 +432,14 @@ var Viewer = new Vue({
 
                     
                     if(i%4 == 0){
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
                     }
                     else{
                         this.Encoder.AudioData+=String.fromCharCode(Math.floor(Math.random()*255));
                     }
                     /*
                     if(i%4 == 0){
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
                     }else{
                         this.Encoder.AudioData+=String.fromCharCode(String.fromCharCode(Math.floor(Math.random()*255)));
                     }*/
@@ -457,7 +453,7 @@ var Viewer = new Vue({
                         j=0;
                     }
 
-                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
+                    this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i]+1)/2)));
                 }
             }
 
@@ -477,7 +473,7 @@ var Viewer = new Vue({
                             j=0;
                         }
 
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL1"){
                     //線性位移加密
@@ -488,7 +484,7 @@ var Viewer = new Vue({
                             j=0;
                         }
 
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(47+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(128+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL2"){
                     //交錯級數加密
@@ -498,8 +494,14 @@ var Viewer = new Vue({
                             this.Encoder.AudioData="";
                             j=0;
                         }
-
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        let OutLineTest = parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2));
+                        if(OutLineTest<0){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i+255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else if(OutLineTest>255){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.pow(-1,i%2)*0.48354512*i-255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else{
+                            this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                        }
                     }
                                     
                 }else if (this.Encoder.EncodeLevel == "LEVEL3"){
@@ -511,7 +513,14 @@ var Viewer = new Vue({
                             j=0;
                         }
 
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        let OutLineTest = parseInt(Math.floor(Math.sin(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2))
+                        if(OutLineTest<0){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.sin(i)+255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else if(OutLineTest>255){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.sin(i)-255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else{
+                            this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                        }
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL4"){
                     //弦波加密cos
@@ -521,7 +530,15 @@ var Viewer = new Vue({
                             this.Encoder.AudioData="";
                             j=0;
                         }
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+
+                        let OutLineTest = parseInt(Math.floor(Math.cos(i)+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2))
+                        if(OutLineTest<0){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.cos(i)+255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else if(OutLineTest>255){
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(Math.cos(i)-255+255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        }else{
+                            this.Encoder.AudioData+=String.fromCharCode(OutLineTest);
+                        }
                     }
                 }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                     //亂數加密
@@ -534,7 +551,7 @@ var Viewer = new Vue({
                         }
     
                         if(i%4 == 0){
-                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[i/4]+1)/2)));
+                            this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(1)[i/4]+1)/2)));
                         }
                         else{
                             this.Encoder.AudioData+=String.fromCharCode(Math.floor(Math.random()*255));
@@ -549,7 +566,7 @@ var Viewer = new Vue({
                             this.Encoder.AudioData="";
                             j=0;
                         } 
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.ceil(255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
+                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(1)[i]+1)/2)));
                     }
                 }
     
@@ -580,16 +597,8 @@ var Viewer = new Vue({
             this.Encoder.IsLoadFile = false ;
             this.Encoder.IsOutFile  = false ;
             this.Decoder.IsOutFile  = true  ;
-            
-            //Make A Buffer
-            //Get Key(32) + 1 + 10 +10 + Key2(32)
-            /*fs.readFile(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'}, (error) => {
-                if (error) throw error;
-                this.Encoder.AudioData="";
-            });*/
-            //Write WaveFile Header
-
-            let FirstDo,SubCounter;
+                       
+            let FirstDo,SubCounter,DownCut=0;
             if(this.Decoder.PointSum-(this.Decoder.PointSum%1000000)==0){
                 //<1000000
                 FirstDo=1;
@@ -620,11 +629,51 @@ var Viewer = new Vue({
 
                     fs.readSync(fd, buffer, 0, SubCounter, 150+i);
 
-                    ee = buffer;
-
                     console.log(buffer.slice(0,20))
                     for(let j=0;j<SubCounter;j++){
-                        Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = buffer[j]/255;
+                        if(Viewer.Decoder.DecodeLevel == "LEVEL0"){
+                            Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*buffer[j]/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL1"){
+                            let TmpGet = buffer[j]-128
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-128;
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*TmpGet/255)-1;            
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL2"){
+                            let TmpGet = buffer[j]-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                           
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL3"){
+                            let TmpGet = buffer[j]-(Math.sin(i+j));
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.sin(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.sin(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL4"){
+                            let TmpGet = buffer[j]-(Math.cos(i+j));
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.cos(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.cos(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL5"){
+                            if((i+j)%4 == 0){
+                                Dwavesurfer.backend.buffer.getChannelData(0)[i+j-DownCut] = (2*buffer[j]/255)-1;
+                            }else{
+                                DownCut++;
+                            }
+                        }else{
+                            this.ErrorMessageBox("解碼設定處理錯誤");
+                            return;
+                        }
                     }
 
                     Dwavesurfer.drawBuffer();
@@ -632,6 +681,8 @@ var Viewer = new Vue({
                     
               
             }
+
+            DownCut=0;
             
             for(let i =0; i < FirstDo && this.Decoder.HaveChannel2; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
@@ -655,7 +706,49 @@ var Viewer = new Vue({
 
                     console.log(buffer.slice(0,20))
                     for(let j=0;j<SubCounter;j++){
-                        Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = buffer[j]/255;
+                        if(Viewer.Decoder.DecodeLevel == "LEVEL0"){
+                            Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*buffer[j]/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL1"){
+                            let TmpGet = buffer[j]-128
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-128;
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*TmpGet/255)-1;            
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL2"){
+                            let TmpGet = buffer[j]-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.pow(-1,(i+j)%2)*0.48354512*(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL3"){
+                            let TmpGet = buffer[j]-(Math.sin(i+j));
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.sin(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.sin(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL4"){
+                            let TmpGet = buffer[j]-(Math.cos(i+j));
+                            if(TmpGet<0){
+                                TmpGet = buffer[j]+255-(Math.cos(i+j));
+                            }else if(TmpGet>255){
+                                TmpGet = buffer[j]-255-(Math.cos(i+j));
+                            }
+                            Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*TmpGet/255)-1;
+                        }else if(Viewer.Decoder.DecodeLevel == "LEVEL5"){
+                            if((i+j)%4 == 0){
+                                Dwavesurfer.backend.buffer.getChannelData(1)[i+j-DownCut] = (2*buffer[j]/255)-1;
+                            }else{
+                                DownCut++;
+                            }
+                        }else{
+                            this.ErrorMessageBox("解碼設定處理錯誤");
+                            return;
+                        }
+                        
                     }
 
                     Dwavesurfer.drawBuffer();
