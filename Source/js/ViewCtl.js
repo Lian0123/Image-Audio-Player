@@ -70,119 +70,8 @@ var Viewer = new Vue({
         },
 
         GetDecodePath:function GetDecodePath(event) {
-            let FileTest = true;
             this.Decoder.FilePath = event.target.files[0].path;
-            fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
-                if(err){
-                    FileTest = false;
-                    this.ErrorMessageBox("系統無法存取檔案");
-                    return;
-                }
-
-                let buffer = Buffer.alloc(144, 'ascii');
-                let bytesRead = 0;
-
-                fs.fstat(fd, function(err, stats) {
-                    if(err){
-                        FileTest = false;
-                        Viewer.ErrorMessageBox("檔案開啟錯誤");
-                        return;
-                    }
-                    
-              
-                    if(fs.readSync(fd, buffer, bytesRead, 144, bytesRead) < 144) {
-                        FileTestt = false;
-                        Viewer.ErrorMessageBox("WAV音檔長度過短");
-                        return;
-                    }
-
-                    //console.log(buffer.slice(0, 145));
-                    //console.log(buffer.slice(85, 96));
-
-                    if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString() ){
-                        console.log("LEVEL0");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 101, 100, 99, 53, 101, 99, 56, 98, 49, 52]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 53, 48, 101, 55, 50, 53, 98, 49, 97, 52]).toString()){
-                        console.log("LEVEL1");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([49, 57, 48, 55, 49, 52, 54, 50, 49, 53, 102]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 56, 49, 54, 52, 102, 54, 98, 55, 57, 56]).toString()){
-                        console.log("LEVEL2");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([51, 101, 51, 48, 99, 56, 54, 51, 57, 50, 97]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([98, 48, 100, 52, 100, 97, 49, 99, 56, 99, 48]).toString()){
-                        console.log("LEVEL3");
-                    }else  if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 48, 55, 101, 98, 50, 53, 99, 56, 51]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([52, 98, 100, 57, 50, 52, 49, 97, 51, 99, 57]).toString()){
-                        console.log("LEVEL4");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 99, 98, 57, 54, 98, 54, 97, 56, 51, 57]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 57, 51, 57, 100, 97, 57, 99, 55, 98, 98]).toString()){
-                        console.log("LEVEL5");
-                    }else{
-
-                    }
-
-                    //Test Channel Sum
-                    if(buffer[64]==2){
-                        Viewer.Decoder.HaveChannel2 = true;
-                    }else if(buffer[64]==1){
-                        Viewer.Decoder.HaveChannel2 = false;
-                    }else{
-                        Viewer.ErrorMessageBox("Channel資訊錯誤");
-                        return;
-                    }
-
-                    //Test this.Decoder.SampleSum
-                    let sampleRateSumStr = "";
-                    for(let i=65;i<75;i++){
-                        sampleRateSumStr+=""+buffer[i];
-                    }
-
-                    Viewer.Decoder.SampleSum = parseInt(sampleRateSumStr);
-                    if(isNaN(Viewer.Decoder.SampleSum)){
-                        Viewer.ErrorMessageBox("檔案錯誤");
-                        return;
-                    }
-
-                    //Test this.Decoder.PointSum
-                    let PointSumStr = "";
-                    for(let i=75;i<85;i++){
-                        PointSumStr+=""+buffer[i];
-                    }
-
-                    Viewer.Decoder.PointSum = parseInt(PointSumStr);
-                    if(isNaN(Viewer.Decoder.PointSum)){
-                        Viewer.ErrorMessageBox("檔案錯誤");
-                        return;
-                    }
-
-                    let ChannelHex = "\x01";
-                    
-
-                    SubCutHex =(Viewer.Decoder.PointSum / 2).toString(16)
-                    if(SubCutHex.length%2 > 0 && SubCutHex.length <9){
-                        SubCutHex = "0" + SubCutHex
-                    }
-
-                    for (let i = 0,n=0; n < SubCutHex.length; i++,n+=2) {
-                        let TmpStr =SubCutHex[i+1]+SubCutHex[i];
-                        SubCutHex[i] = String.fromCharCode(parseInt(SubCutHex.charAt(SubCutHex.length-2-n)+SubCutHex.charAt(SubCutHex.length-1-n), 16));
-                    }
-                    
-
-                    if(Viewer.Decoder.HaveChannel2)
-                        ChannelHex = "\x02";
-        
-                    fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x52\x49\x46\x46\x0C\x06\x00\x00\x57\x41\x56\x45\x66\x6D\x74\x20\x10\x00\x00\x00\x01\x00"+ChannelHex+"\x00\xF8\x2A\x00\x00\xF0\x55\x00\x00\x02\x00\x10\x00\x64\x61\x74\x61"+SubCutHex,{encoding: 'ascii',flag:'w'});
-        
-                    
-                    for(let i=0;i<Viewer.Decoder.PointSum/2;i++){
-                        fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00",{encoding: 'ascii',flag:'a+'}); 
-                    }
-        
-                                    
-                    if(Viewer.Decoder.HaveChannel2){
-                        for(let i=0;i<Viewer.Decoder.PointSum;i++){
-                            fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00",{encoding: 'ascii',flag:'a+'}); 
-                        }
-                    }
-
-                    Viewer.DecoderPlay();
-                });
-            });
+            console.log(event.target.files)            
         },
         Copy:function Copy() {
             //wavesurfer.play()
@@ -243,7 +132,7 @@ var Viewer = new Vue({
                 
             }else if(this.NowType == "解碼器"){
                 if(this.Encoder.IsLoadFile){
-                    wavesurfer.destroy();
+                    Dwavesurfer.destroy();
                 }
                 
                 this.Encoder.IsLoadFile = false ;
@@ -252,6 +141,116 @@ var Viewer = new Vue({
                 //正規->[0~255]
                 //Get Info x,y
                 //push->AudioArray
+                let FileTest = true;
+                fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
+                    if(err){
+                        FileTest = false;
+                        this.ErrorMessageBox("系統無法存取檔案");
+                        return;
+                    }
+
+                    let buffer = Buffer.alloc(144, 'ascii');
+                    let bytesRead = 0;
+
+                    fs.fstat(fd, function(err, stats) {
+                        if(err){
+                            FileTest = false;
+                            Viewer.ErrorMessageBox("檔案開啟錯誤");
+                            return;
+                        }
+                        
+                
+                        if(fs.readSync(fd, buffer, bytesRead, 144, bytesRead) < 144) {
+                            FileTestt = false;
+                            Viewer.ErrorMessageBox("WAV音檔長度過短");
+                            return;
+                        }
+
+                        //console.log(buffer.slice(0, 145));
+                        //console.log(buffer.slice(85, 96));
+
+                        if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString() ){
+                            console.log("LEVEL0");
+                        }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 101, 100, 99, 53, 101, 99, 56, 98, 49, 52]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 53, 48, 101, 55, 50, 53, 98, 49, 97, 52]).toString()){
+                            console.log("LEVEL1");
+                        }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([49, 57, 48, 55, 49, 52, 54, 50, 49, 53, 102]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 56, 49, 54, 52, 102, 54, 98, 55, 57, 56]).toString()){
+                            console.log("LEVEL2");
+                        }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([51, 101, 51, 48, 99, 56, 54, 51, 57, 50, 97]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([98, 48, 100, 52, 100, 97, 49, 99, 56, 99, 48]).toString()){
+                            console.log("LEVEL3");
+                        }else  if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 48, 55, 101, 98, 50, 53, 99, 56, 51]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([52, 98, 100, 57, 50, 52, 49, 97, 51, 99, 57]).toString()){
+                            console.log("LEVEL4");
+                        }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 99, 98, 57, 54, 98, 54, 97, 56, 51, 57]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 57, 51, 57, 100, 97, 57, 99, 55, 98, 98]).toString()){
+                            console.log("LEVEL5");
+                        }else{
+
+                        }
+
+                        //Test Channel Sum
+                        if(buffer[64]==2){
+                            Viewer.Decoder.HaveChannel2 = true;
+                        }else if(buffer[64]==1){
+                            Viewer.Decoder.HaveChannel2 = false;
+                        }else{
+                            Viewer.ErrorMessageBox("Channel資訊錯誤");
+                            return;
+                        }
+
+                        //Test this.Decoder.SampleSum
+                        let sampleRateSumStr = "";
+                        for(let i=65;i<75;i++){
+                            sampleRateSumStr+=""+buffer[i];
+                        }
+
+                        Viewer.Decoder.SampleSum = parseInt(sampleRateSumStr);
+                        if(isNaN(Viewer.Decoder.SampleSum)){
+                            Viewer.ErrorMessageBox("檔案錯誤");
+                            return;
+                        }
+
+                        //Test this.Decoder.PointSum
+                        let PointSumStr = "";
+                        for(let i=75;i<85;i++){
+                            PointSumStr+=""+buffer[i];
+                        }
+
+                        Viewer.Decoder.PointSum = parseInt(PointSumStr);
+                        if(isNaN(Viewer.Decoder.PointSum)){
+                            Viewer.ErrorMessageBox("檔案錯誤");
+                            return;
+                        }
+
+                        let ChannelHex = "\x01";
+                        
+
+                        SubCutHex =(Viewer.Decoder.PointSum / 2).toString(16)
+                        if(SubCutHex.length%2 > 0 && SubCutHex.length <9){
+                            SubCutHex = "0" + SubCutHex
+                        }
+
+                        for (let i = 0,n=0; n < SubCutHex.length; i++,n+=2) {
+                            let TmpStr =SubCutHex[i+1]+SubCutHex[i];
+                            SubCutHex[i] = String.fromCharCode(parseInt(SubCutHex.charAt(SubCutHex.length-2-n)+SubCutHex.charAt(SubCutHex.length-1-n), 16));
+                        }
+                        
+
+                        if(Viewer.Decoder.HaveChannel2)
+                            ChannelHex = "\x02";
+            
+                        fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x52\x49\x46\x46\x0C\x06\x00\x00\x57\x41\x56\x45\x66\x6D\x74\x20\x10\x00\x00\x00\x01\x00"+ChannelHex+"\x00\xF8\x2A\x00\x00\xF0\x55\x00\x00\x02\x00\x10\x00\x64\x61\x74\x61"+SubCutHex,{encoding: 'ascii',flag:'w'});
+            
+                        
+                        for(let i=0;i<Viewer.Decoder.PointSum/32;i++){
+                            fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
+
+                            if(Viewer.Decoder.HaveChannel2){
+                                fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
+                            }
+                        }
+            
+
+                        Viewer.DecoderPlay();
+                    });
+                });
                 this.Decoder.IsLoadFile = true  ;
                 
             }
@@ -590,8 +589,17 @@ var Viewer = new Vue({
             });*/
             //Write WaveFile Header
 
+            let FirstDo,SubCounter;
+            if(this.Decoder.PointSum-(this.Decoder.PointSum%1000000)==0){
+                //<1000000
+                FirstDo=1;
+                SubCounter = Viewer.Decoder.PointSum%1000000;
+            }else{
+                //>1000000
+                FirstDo=this.Decoder.PointSum-(this.Decoder.PointSum%1000000)+1;
+                SubCounter = 1000000;
+            }
         
-            let FirstDo  = Math.max(this.Decoder.PointSum-(this.Decoder.PointSum%1000000),this.Decoder.PointSum%1000000);
             for(let i =0; i < FirstDo; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
@@ -610,22 +618,22 @@ var Viewer = new Vue({
                         }
                     });
 
-                    fs.readSync(fd, buffer, 0, Math.min(1000000,Viewer.Decoder.PointSum%1000000), 150+i);
+                    fs.readSync(fd, buffer, 0, SubCounter, 150+i);
 
                     ee = buffer;
 
-                    console.log(buffer.slice(0,200))
-                    for(let j=0;j<Math.min(1000000,Viewer.Decoder.PointSum%1000000);j++){
+                    console.log(buffer.slice(0,20))
+                    for(let j=0;j<SubCounter;j++){
                         Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = buffer[j]/255;
-                        //console.log(buffer[j])
                     }
+
+                    Dwavesurfer.drawBuffer();
                 });
                     
               
             }
             
-            FirstDo  = this.Decoder.PointSum + Math.max(this.Decoder.PointSum-(this.Decoder.PointSum%1000000),this.Decoder.PointSum%1000000);
-            for(let i =0; i < FirstDo; i+=1000000){
+            for(let i =0; i < FirstDo && this.Decoder.HaveChannel2; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
                         FileTest = false;
@@ -643,169 +651,28 @@ var Viewer = new Vue({
                         }
                     });
 
-                    fs.readSync(fd, buffer, 0, Math.min(1000000,Viewer.Decoder.PointSum%1000000), 150+i);
+                    fs.readSync(fd, buffer, 0, SubCounter, 150+i+Viewer.Decoder.PointSum);
 
-                    ee = buffer;
-
-                    console.log(buffer.slice(0,200))
-                    for(let j=0;j<Math.min(1000000,Viewer.Decoder.PointSum%1000000);j++){
+                    console.log(buffer.slice(0,20))
+                    for(let j=0;j<SubCounter;j++){
                         Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = buffer[j]/255;
-                        //console.log(buffer[j])
                     }
+
+                    Dwavesurfer.drawBuffer();
                 });
-                    
-              
             }
-            /*
-            if(FirstDo>0){
-                fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
-                    if(err){
-                        FileTest = false;
-                        this.ErrorMessageBox("系統無法存取檔案");
-                        return;
-                    }
 
-                    let buffer = Buffer.alloc(Viewer.Decoder.PointSum%1000000, 'ascii');
-
-                    fs.fstat(fd, function(err, stats) {
-                        if(err){
-                            FileTest = false;
-                            Viewer.ErrorMessageBox("檔案開啟錯誤");
-                            return;
-                        }
-                    });
-
-                    fs.readSync(fd, buffer, 0, Viewer.Decoder.PointSum%1000000, 145)
-                    for(let j=0;j<Viewer.Decoder.PointSum%1000000;j++){
-                        Dwavesurfer.backend.buffer.getChannelData(0)[FirstDo+j] =buffer[j]/255;
-                        console.log(buffer[j])
-                    }
-                });
-            }*/
-            
-/*
-            fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
-                if(err){
-                    FileTest = false;
-                    this.ErrorMessageBox("系統無法存取檔案");
-                    return;
-                }
-
-                let buffer = Buffer.alloc(1000000, 'ascii');
-                let bytesRead = 0;
-
-                fs.fstat(fd, function(err, stats) {
-                    if(err){
-                        FileTest = false;
-                        Viewer.ErrorMessageBox("檔案開啟錯誤");
-                        return;
-                    }
-                    
-              
-                    if(fs.readSync(fd, buffer, bytesRead, 144, bytesRead) < 144) {
-                        FileTestt = false;
-                        Viewer.ErrorMessageBox("WAV音檔長度過短");
-                        return;
-                    }
-
-                    console.log(buffer.slice(0, 145));
-                    console.log(buffer.slice(85, 96));
-
-                    if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString() ){
-                        console.log("LEVEL0");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 101, 100, 99, 53, 101, 99, 56, 98, 49, 52]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 53, 48, 101, 55, 50, 53, 98, 49, 97, 52]).toString()){
-                        console.log("LEVEL1");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([49, 57, 48, 55, 49, 52, 54, 50, 49, 53, 102]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 56, 49, 54, 52, 102, 54, 98, 55, 57, 56]).toString()){
-                        console.log("LEVEL2");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([51, 101, 51, 48, 99, 56, 54, 51, 57, 50, 97]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([98, 48, 100, 52, 100, 97, 49, 99, 56, 99, 48]).toString()){
-                        console.log("LEVEL3");
-                    }else  if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 48, 55, 101, 98, 50, 53, 99, 56, 51]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([52, 98, 100, 57, 50, 52, 49, 97, 51, 99, 57]).toString()){
-                        console.log("LEVEL4");
-                    }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 99, 98, 57, 54, 98, 54, 97, 56, 51, 57]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 57, 51, 57, 100, 97, 57, 99, 55, 98, 98]).toString()){
-                        console.log("LEVEL5");
-                    }else{
-
-                    }
-
-                    //Test Channel Sum
-                    if(buffer[64]==2){
-                        Viewer.Decoder.HaveChannel2 = true;
-                    }else if(buffer[64]==1){
-                        Viewer.Decoder.HaveChannel2 = false;
-                    }else{
-                        Viewer.ErrorMessageBox("Channel資訊錯誤");
-                        return;
-                    }
-
-                    //Test this.Decoder.PointSum
-                    let PointSumStr = "";
-                    for(let i=65;i<73;i++){
-                        PointSumStr+=""+buffer[i];
-                    }
-
-                    Viewer.Decoder.PointSum = parseInt(PointSumStr);
-                    if(isNaN(PointSumStr)){
-                        Viewer.ErrorMessageBox("檔案錯誤");
-                        return;
-                    }
-
-                    let sampleRateSumStr = "";
-                    for(let i=73;i<85;i++){
-                        sampleRateSumStr+=""+buffer[i];
-                    }
-
-                    Viewer.Decoder.PointSum = parseInt(sampleRateSumStr);
-                    if(isNaN(sampleRateSumStr)){
-                         //error MSG
-                    }
-
-                    let ChannelHex = "\x01",
-                    SubCutHex  = "\xE8\x05\x00\x00";
-   
-                    if(Viewer.Decoder.HaveChannel2)
-                        ChannelHex = "\x02";
-        
-                    fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x52\x49\x46\x46\x0C\x06\x00\x00\x57\x41\x56\x45\x66\x6D\x74\x20\x10\x00\x00\x00\x01\x00"+ChannelHex+"\x00\xF8\x2A\x00\x00\xF0\x55\x00\x00\x02\x00\x10\x00\x64\x61\x74\x61"+SubCutHex,{encoding: 'ascii',flag:'w'});
-        
-                    
-                    for(let i=0;i<Viewer.Decoder.PointSum;i++){
-                        fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
-                    }
-        
-                                    
-                    if(Viewer.Decoder.HaveChannel2){
-                        for(let i=0;i<Viewer.Decoder.PointSum;i++){
-                            fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
-                        }
-                    }
-                });
-            });
-           
-*/
         },
         DecoderPlay:function DecoderPlay() {
             //FS.read & Load
             Dwavesurfer = WaveSurfer.create({
                 container: '#Dwaveform',
-                waveColor: 'blue',
+                waveColor: 'violet',
                 progressColor: 'purple'
             });
             Dwavesurfer.load(__dirname + '/.file/.tmp.wav');  
             Dwavesurfer.loaded = true;
-            Dwavesurfer.isReady =true;     
-                /*
-            if(Dwavesurfer.backend.buffer.length>0){
-                Dwavesurfer = WaveSurfer.create({
-                    container: '#waveform',
-                    waveColor: 'violet',
-                    progressColor: 'purple'
-                });
-                Dwavesurfer.drawBuffer();
-                Dwavesurfer.loaded = true;
-                Dwavesurfer.isReady =true;
-            }else{
-                this.ErrorMessageBox("無法解析音訊資料");
-            }*/
+            Dwavesurfer.isReady =true;
         },
         DownloadImg:function DownloadImg() {
             if(this.Encoder.IsOutFile){
@@ -816,13 +683,6 @@ var Viewer = new Vue({
                     }
                     this.ErrorMessageBox("已匯出至OutFile資料夾中")
                 });
-            }else{
-                this.ErrorMessageBox("下載錯誤");
-            }
-        },
-        DownloadAudio:function DownloadAudio() {
-            if(this.Decoder.IsOutFile){
-                //TODO
             }else{
                 this.ErrorMessageBox("下載錯誤");
             }

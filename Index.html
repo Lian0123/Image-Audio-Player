@@ -112,16 +112,20 @@
                                     <button class="ts button" @click="StartDecode()">解密</button>
                                 </div>
                             </div>
+                            <div id="Dwaveform"></div>
                             <h3  v-if="Decoder.IsOutFile" class="ts header"><i class="file audio outline icon"></i>匯出音檔</h3>
                             <div v-if="Decoder.IsOutFile" class="ts grid">
-                                <div class="stretched column">
-                                    
-                                </div>
+                                        <div class="column">
+                                                <button class="ts button" @click="if(Dwavesurfer.isPlaying()){Dwavesurfer.pause();}else{Dwavesurfer.play();}">播放</button>
+                                            </div>
+            
                                 <div class="column">
-                                    <button class="ts button" @click="DownloadAudio()">下載</button>
+                                    <button class="ts button" @click="Dwavesurfer.stop();">停止</button>
                                 </div>
+                                <!--div class="column">
+                                    <button class="ts button" @click="DownloadAudio()">下載</button>
+                                </div-->
                             </div>
-                            <div id="Dwaveform"></div>
                     </div>
                     <!--Img/AudioPlayer-->
                 </div>
