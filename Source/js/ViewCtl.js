@@ -270,10 +270,11 @@ var Viewer = new Vue({
             this.Encoder.HeaderNode = "\x42\x4D"+FileSize[0]+FileSize[1]+FileSize[2]+FileSize[3]+"\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00"+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+FileWeight[0]+FileWeight[1]+FileWeight[2]+FileWeight[3]+"\x01\x00\x20\x00\x00\x00\x00\x00\xE1\x00\x00\xC4\x0E\x00\x00\xC4\x0E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             
             fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.HeaderNode,{encoding: 'ascii',flag:'w'}, (error) => {
-                if (error) throw error;
-                Viewer.ErrorMessageBox("錯誤！無法建立暫存檔");
-                this.Encoder.IsOutFile = false;
-                return;
+                if (error){
+                    Viewer.ErrorMessageBox("錯誤！無法建立暫存檔");
+                    this.Encoder.IsOutFile = false;
+                    return;
+                }
             });
 
             let numberOfChannelHex = String.fromCharCode(parseInt(wavesurfer.backend.buffer.numberOfChannels, 16));
@@ -742,6 +743,7 @@ var Viewer = new Vue({
                 fs.copyFile(__dirname + '/.file/.tmp.bmp', __dirname + '/OutFile/Out'+NowDate.getFullYear() + '-' + (NowDate.getMonth()+1) + '-' + NowDate.getDate() + '-' + NowDate.getHours() + '-' + NowDate.getMinutes() + '-' + NowDate.getSeconds()+'.bmp', (err) => {
                     if (err){
                         this.ErrorMessageBox("下載錯誤");
+                        return;
                     }
                     this.ErrorMessageBox("已匯出至OutFile資料夾中")
                 });
