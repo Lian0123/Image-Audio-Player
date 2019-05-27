@@ -66,12 +66,10 @@ var Viewer = new Vue({
 
         GetEncodePath:function GetEncodePath(event) {
             this.Encoder.FilePath = event.target.files[0].path;
-            console.log(event.target.files)
         },
 
         GetDecodePath:function GetDecodePath(event) {
             this.Decoder.FilePath = event.target.files[0].path;
-            console.log(event.target.files)            
         },
 
         LoadFile:function LoadFile() {
@@ -112,6 +110,7 @@ var Viewer = new Vue({
                     if(err){
                         FileTest = false;
                         this.ErrorMessageBox("系統無法存取檔案");
+                        this.Decoder.IsLoadFile = false  ;
                         return;
                     }
 
@@ -122,6 +121,7 @@ var Viewer = new Vue({
                         if(err){
                             FileTest = false;
                             Viewer.ErrorMessageBox("檔案開啟錯誤");
+                            this.Decoder.IsLoadFile = false  ;
                             return;
                         }
                         
@@ -129,12 +129,10 @@ var Viewer = new Vue({
                         if(fs.readSync(fd, buffer, bytesRead, 144, bytesRead) < 144) {
                             FileTestt = false;
                             Viewer.ErrorMessageBox("WAV音檔長度過短");
+                            this.Decoder.IsLoadFile = false  ;
                             return;
                         }
 
-                        //console.log(buffer.slice(0, 145));
-                        //console.log(buffer.slice(85, 96));
-                        
                         if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([52, 99, 99, 102, 100, 100, 101, 54, 53, 50, 49]).toString() && Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([57, 52, 57, 52, 53, 53, 55, 51, 55, 100, 52]).toString()){
                             Viewer.Decoder.DecodeLevel = "LEVEL0";
                         }else if(Buffer.from(buffer.slice(53, 64)).toString() == Buffer.from([57, 101, 100, 99, 53, 101, 99, 56, 98, 49, 52]).toString()&& Buffer.from(buffer.slice(85, 96)).toString() == Buffer.from([100, 53, 48, 101, 55, 50, 53, 98, 49, 97, 52]).toString()){
@@ -162,6 +160,7 @@ var Viewer = new Vue({
                             Viewer.Decoder.HaveChannel2 = false;
                         }else{
                             Viewer.ErrorMessageBox("Channel資訊錯誤");
+                            this.Decoder.IsLoadFile = false  ;
                             return;
                         }
 
@@ -174,6 +173,7 @@ var Viewer = new Vue({
                         Viewer.Decoder.SampleSum = parseInt(sampleRateSumStr);
                         if(isNaN(Viewer.Decoder.SampleSum)){
                             Viewer.ErrorMessageBox("檔案錯誤");
+                            this.Decoder.IsLoadFile = false  ;
                             return;
                         }
 
@@ -186,12 +186,12 @@ var Viewer = new Vue({
                         Viewer.Decoder.PointSum = parseInt(PointSumStr);
                         if(isNaN(Viewer.Decoder.PointSum)){
                             Viewer.ErrorMessageBox("檔案錯誤");
+                            this.Decoder.IsLoadFile = false  ;
                             return;
                         }
 
                         let ChannelHex = "\x01";
                         
-
                         SubCutHex =(Viewer.Decoder.PointSum / 2).toString(16)
                         if(SubCutHex.length%2 > 0 && SubCutHex.length <9){
                             SubCutHex = "0" + SubCutHex
@@ -202,20 +202,21 @@ var Viewer = new Vue({
                             SubCutHex[i] = String.fromCharCode(parseInt(SubCutHex.charAt(SubCutHex.length-2-n)+SubCutHex.charAt(SubCutHex.length-1-n), 16));
                         }
                         
-
                         if(Viewer.Decoder.HaveChannel2)
                             ChannelHex = "\x02";
             
                         fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x52\x49\x46\x46\x0C\x06\x00\x00\x57\x41\x56\x45\x66\x6D\x74\x20\x10\x00\x00\x00\x01\x00"+ChannelHex+"\x00\xF8\x2A\x00\x00\xF0\x55\x00\x00\x02\x00\x10\x00\x64\x61\x74\x61"+SubCutHex,{encoding: 'ascii',flag:'w'});
             
-                        
+                        let WriterXoStr = "";
                         for(let i=0;i<Viewer.Decoder.PointSum/32;i++){
-                            fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
-
+                            WriterXoStr+="\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+                            
                             if(Viewer.Decoder.HaveChannel2){
-                                fs.writeFileSync(__dirname + '/.file/.tmp.wav',"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",{encoding: 'ascii',flag:'a+'}); 
+                                WriterXoStr+="\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                             }
                         }
+                        fs.writeFileSync(__dirname + '/.file/.tmp.wav',WriterXoStr,{encoding: 'ascii',flag:'a+'}); 
+
             
 
                         Viewer.DecoderPlay();
@@ -240,11 +241,11 @@ var Viewer = new Vue({
             this.Encoder.IsOutFile  = true  ;
             
             //Get WaveSurfer Audio Header
-            let FileHeader;
 
             if(!wavesurfer.isReady){
                 this.ErrorMessageBox("不支援此輸入格式檔案");
                 this.Encoder.IsLoadFile = false ;
+                this.Encoder.IsOutFile = false;
                 wavesurfer.destroy();
                 return;
             }
@@ -256,13 +257,12 @@ var Viewer = new Vue({
             else
                 ImageSize = "" + (Math.ceil(Math.sqrt((wavesurfer.backend.buffer.length*wavesurfer.backend.buffer.numberOfChannels+128+21)/4))).toString(16);
 
-            if(ImageSize.length%2 > 0 && ImageSize.length <9){
+            if(ImageSize.length%2 > 0 && ImageSize.length < 9){
                 ImageSize = "0" + ImageSize
             }
             
             //???
             for (let i = 0,n=0; n < ImageSize.length; i++,n+=2) {
-                //FileWeight[i] = String.fromCharCode(parseInt(ImageSize[n-1]+ImageSize[n-2], 16));
                 let TmpStr =ImageSize[i+1]+ImageSize[i];
                 FileWeight[i] = String.fromCharCode(parseInt(ImageSize.charAt(ImageSize.length-2-n)+ImageSize.charAt(ImageSize.length-1-n), 16));
             }
@@ -271,6 +271,9 @@ var Viewer = new Vue({
             
             fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.HeaderNode,{encoding: 'ascii',flag:'w'}, (error) => {
                 if (error) throw error;
+                Viewer.ErrorMessageBox("錯誤！無法建立暫存檔");
+                this.Encoder.IsOutFile = false;
+                return;
             });
 
             let numberOfChannelHex = String.fromCharCode(parseInt(wavesurfer.backend.buffer.numberOfChannels, 16));
@@ -327,19 +330,10 @@ var Viewer = new Vue({
                 Key2 = sha256.hex(Key);
             }
 
-            let KeyHex  = "",
-                KeyHex2 = "";
-/*
-            for(let i=0;i<Key.length;i++){
-                KeyHex  += String.fromCharCode(parseInt(Key[i] ,16));
-                KeyHex2 += String.fromCharCode(parseInt(Key2[i],16));
-            }
-*/
             this.Encoder.AudioData = Key + numberOfChannelHex + sampleRateHex + samplelengthHex.toString(16) + Key2;
 
             //寫入子Header
             fs.writeFileSync(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'});
-            //console.log("KeyHex:"+KeyHex)
 
             //Clear Tmp Data
             this.Encoder.AudioData = "";
@@ -423,28 +417,19 @@ var Viewer = new Vue({
                 }
             }else if (this.Encoder.EncodeLevel == "LEVEL5"){
                 //亂數加密
-                console.log(wavesurfer.backend.buffer.length*4);
                 for(let i=0,j=0;i<wavesurfer.backend.buffer.length*4;i++,j++){
                     if(j>1000000){
                         fs.writeFileSync(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'});
-                        console.log("[0]:"+this.Encoder.AudioData.length);
                         this.Encoder.AudioData="";
                         j=0;
                     }
 
-                    
                     if(i%4 == 0){
                         this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
                     }
                     else{
                         this.Encoder.AudioData+=String.fromCharCode(Math.floor(Math.random()*255));
                     }
-                    /*
-                    if(i%4 == 0){
-                        this.Encoder.AudioData+=String.fromCharCode(parseInt(Math.floor(255*(wavesurfer.backend.buffer.getChannelData(0)[i/4]+1)/2)));
-                    }else{
-                        this.Encoder.AudioData+=String.fromCharCode(String.fromCharCode(Math.floor(Math.random()*255)));
-                    }*/
                 }
             }else{
                 //無加密
@@ -547,7 +532,6 @@ var Viewer = new Vue({
                     for(let i=0,j=0;i<wavesurfer.backend.buffer.length*4;i++,j++){
                         if(j>1000000){
                             fs.writeFileSync(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'});
-                            console.log("[1]:"+this.Encoder.AudioData.length+","+i);
                             this.Encoder.AudioData="";
                             j=0;
                         }
@@ -574,9 +558,6 @@ var Viewer = new Vue({
     
                 fs.writeFileSync(__dirname + '/.file/.tmp.bmp',this.Encoder.AudioData,{encoding: 'ascii',flag:'a+'});
             }
-       
-            //push hash(Key),  channelSum , 2hash(Key),  imgs
-            //Psuh ImgArray -> Out File
 
             this.Encoder.HeaderNode = "";
             this.Encoder.AudioData = "";
@@ -585,21 +566,14 @@ var Viewer = new Vue({
         },
 
         StartDecode: function StartDecode() {
-            let Key        = "" ,
-                Key2       = "" ,
-                Channel1 = [],
-                Channel2 = [];
-            /*
-            let this.Decoder.FileTypeTest  = true,
-                this.Decoder.HaveChannel2  = false,
-                this.Decoder.PointSum      = 0,
-                this.Decoder.PointSum = 44100;
-            */
-
             this.Encoder.IsLoadFile = false ;
             this.Encoder.IsOutFile  = false ;
             this.Decoder.IsOutFile  = true  ;
-                       
+
+            if(Viewer.Decoder.DecodeLevel == "LEVEL5"){
+                this.Decoder.PointSum*=4;
+            }
+
             let FirstDo,SubCounter,DownCut=0;
             if(this.Decoder.PointSum-(this.Decoder.PointSum%1000000)==0){
                 //<1000000
@@ -611,7 +585,7 @@ var Viewer = new Vue({
                 SubCounter = 1000000;
             }
         
-            for(let i =0; i < FirstDo; i+=1000000){
+            for(let i =0,v=0; i < FirstDo; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
                         FileTest = false;
@@ -631,7 +605,6 @@ var Viewer = new Vue({
 
                     fs.readSync(fd, buffer, 0, SubCounter, 150+i);
 
-                    console.log(buffer.slice(0,20))
                     for(let j=0;j<SubCounter;j++){
                         if(Viewer.Decoder.DecodeLevel == "LEVEL0"){
                             Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*buffer[j]/255)-1;
@@ -666,10 +639,8 @@ var Viewer = new Vue({
                             }
                             Dwavesurfer.backend.buffer.getChannelData(0)[i+j] = (2*TmpGet/255)-1;
                         }else if(Viewer.Decoder.DecodeLevel == "LEVEL5"){
-                            if((i+j)%4 == 0){
-                                Dwavesurfer.backend.buffer.getChannelData(0)[i+j-DownCut] = (2*buffer[j]/255)-1;
-                            }else{
-                                DownCut++;
+                            if((i+j+1)%4 == 0){
+                                Dwavesurfer.backend.buffer.getChannelData(0)[(i+j+1)/4] = (2*buffer[j]/255)-1;
                             }
                         }else{
                             this.ErrorMessageBox("解碼設定處理錯誤");
@@ -685,7 +656,7 @@ var Viewer = new Vue({
 
             DownCut=0;
             
-            for(let i =0; i < FirstDo && this.Decoder.HaveChannel2; i+=1000000){
+            for(let i =0,v=0; i < FirstDo && this.Decoder.HaveChannel2; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
                         FileTest = false;
@@ -702,10 +673,9 @@ var Viewer = new Vue({
                             return;
                         }
                     });
-
+                    
                     fs.readSync(fd, buffer, 0, SubCounter, 150+i+Viewer.Decoder.PointSum);
 
-                    console.log(buffer.slice(0,20))
                     for(let j=0;j<SubCounter;j++){
                         if(Viewer.Decoder.DecodeLevel == "LEVEL0"){
                             Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*buffer[j]/255)-1;
@@ -740,10 +710,8 @@ var Viewer = new Vue({
                             }
                             Dwavesurfer.backend.buffer.getChannelData(1)[i+j] = (2*TmpGet/255)-1;
                         }else if(Viewer.Decoder.DecodeLevel == "LEVEL5"){
-                            if((i+j)%4 == 0){
-                                Dwavesurfer.backend.buffer.getChannelData(1)[i+j-DownCut] = (2*buffer[j]/255)-1;
-                            }else{
-                                DownCut++;
+                            if((i+j+1)%4 == 0){
+                                Dwavesurfer.backend.buffer.getChannelData(1)[(i+j+1)/4] = (2*buffer[j]/255)-1;
                             }
                         }else{
                             this.ErrorMessageBox("解碼設定處理錯誤");
