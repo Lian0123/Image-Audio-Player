@@ -77,6 +77,10 @@ var Viewer = new Vue({
                 if(this.Encoder.IsLoadFile){
                     wavesurfer.destroy()
                 }
+                
+                if(this.Decoder.IsLoadFile){
+                    Dwavesurfer.destroy();
+                }
 
                 this.Decoder.IsLoadFile = false ;
                 this.Decoder.IsOutFile  = false ;
@@ -101,6 +105,10 @@ var Viewer = new Vue({
                     Dwavesurfer.destroy();
                 }
                 
+                if(this.Encoder.IsLoadFile){
+                    wavesurfer.destroy()
+                }
+
                 this.Encoder.IsLoadFile = false ;
                 this.Encoder.IsOutFile  = false ;
                 this.Decoder.IsLoadFile = false ;
