@@ -41,7 +41,7 @@ npm run start1
   
 * 為什麼輸入的音檔無法正確播放與加密？
 
-本系統使用wavesurfer.js，一切輸入檔案類型皆同wavesurfer.js支援。如mid檔就不支援。
+  本系統使用wavesurfer.js，一切輸入檔案類型皆同wavesurfer.js支援。如mid檔就不支援。
 
 * 支援解密後的音檔輸出嗎？
 
