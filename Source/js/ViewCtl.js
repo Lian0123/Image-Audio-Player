@@ -664,7 +664,18 @@ var Viewer = new Vue({
             }
 
             DownCut=0;
-            
+            if(this.Decoder.HaveChannel2){
+                try{
+                    Dwavesurfer.backend.buffer.getChannelData(1);
+                }catch (error) {
+                    Dwavesurfer.destroy();
+                    this.Decoder.IsLoadFile = false ;
+                    this.Decoder.IsOutFile  = false  ;
+                    this.ErrorMessageBox("解密錯誤 請等到音訊載入完成 再按下解密");
+                    return;
+                }
+            }
+
             for(let i =0,v=0; i < FirstDo && this.Decoder.HaveChannel2; i+=1000000){
                 fs.open(this.Decoder.FilePath, 'r', function(err, fd) {
                     if(err){
