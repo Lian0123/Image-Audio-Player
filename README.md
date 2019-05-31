@@ -13,7 +13,7 @@ npm install
 npm run start
 ```
 
-## 直接執行(if not have electorn2)
+## 直接執行(if not have electron2)
 ```
 npm run start1
 ```
