@@ -156,7 +156,7 @@ var Viewer = new Vue({
                         }else{
                             Viewer.Decoder.DecodeLevel = "LEVEL0";
                             Viewer.ErrorMessageBox("解密選項選擇錯誤");
-                            this.Decoder.IsLoadFile = false  ;
+                            Viewer.Decoder.IsLoadFile = false  ;
                             return;
                         }
                         
@@ -280,7 +280,7 @@ var Viewer = new Vue({
             fs.writeFile(__dirname + '/.file/.tmp.bmp',this.Encoder.HeaderNode,{encoding: 'ascii',flag:'w'}, (error) => {
                 if (error){
                     Viewer.ErrorMessageBox("錯誤！無法建立暫存檔");
-                    this.Encoder.IsOutFile = false;
+                    Viewer.Encoder.IsOutFile = false;
                     return;
                 }
             });
