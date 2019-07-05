@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <!--meta http-equiv="X-UA-Compatible" content="IE=edge"-->
-        <title>Image Audio Player</title>
+        <title>Image Audio Player [Version 1.2.0]</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" type="text/css" media="screen" href="./Source/css/tocas.css">
         <script src="./Source/js/wavesurfer.min.js"></script>
@@ -59,11 +59,14 @@
                             <div v-if="Encoder.IsLoadFile" class="ts grid">
                                 <div class="stretched column">
                                     <div class="ts fluid">
-                                        <select class="ts basic dropdown" v-model="Encoder.EncodeLevel">
-                                            <option v-for="Option in Encoder.Options" v-bind:value="Option.value">
-                                                {{ Option.text }}
-                                            </option>
-                                        </select>
+                                        <div  class="ts input" >
+                                            <select class="ts basic dropdown" v-model="Encoder.EncodeLevel">
+                                                <option v-for="Option in Encoder.Options" v-bind:value="Option.value">
+                                                    {{ Option.text }}
+                                                </option>
+                                            </select>
+                                            <input v-if="Encoder.EncodeLevel == 'LEVEL1' || Encoder.EncodeLevel == 'LEVEL2'" type="number" min="0" max="255" v-model:value="Offset" />
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="column">
@@ -101,11 +104,14 @@
                             <div v-if="Decoder.IsLoadFile" class="ts grid">
                                 <div class="stretched column">
                                     <div class="ts fluid">
+                                        <div  class="ts input" >
                                             <select class="ts basic dropdown" v-model="Decoder.DecodeLevel" disabled="disabled">
                                                 <option v-for="Option in Decoder.Options" v-bind:value="Option.value">
                                                     {{ Option.text }}
                                                 </option>
                                             </select>
+                                            <input v-if="Decoder.DecodeLevel == 'LEVEL1' || Encoder.DecodeLevel == 'LEVEL2'" type="number" min="0" max="255" v-model:value="Offset" />
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="column">

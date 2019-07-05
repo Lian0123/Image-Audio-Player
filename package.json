@@ -4,17 +4,21 @@
   "description": "",
   "dependencies": {
     "electron": "^4.1.3",
-    "path": "^0.12.7",
-    "url": "^0.11.0",
+    "electron-packager": "^13.1.1",
+    "js-sha256": "^0.9.0",
     "kaitai-struct": "^0.8.0-SNAPSHOT.11",
-    "js-sha256": "^0.9.0"
+    "path": "^0.12.7",
+    "url": "^0.11.0"
   },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "mkdir .file && mkdir OutFile",
     "start1": "electron main.js",
-    "start": "electron2 main.js"
+    "start": "electron2 main.js",
+    "build_mac": "electron-packager . Image-Audio-Player --overwrite --out=Image-Audio-Player --platform=darwin --arch=x64 --asar=false ",
+    "build_win": "electron-packager . Image-Audio-Player --overwrite --out=Image-Audio-Player --platform=win32  --arch=x64 --asar=false ",
+    "build_linux": "electron-packager . Image-Audio-Player --overwrite --out=Image-Audio-Player  --platform=linux --arch=x64 --asar=false "
   },
   "author": "lian0123",
   "license": "MIT"
