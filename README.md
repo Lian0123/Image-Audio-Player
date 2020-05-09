@@ -26,6 +26,12 @@ npm run start1
 
 而在解密BMP影像時，會依據BMP Header與子header來建立偽造的wav檔音訊，在此我們能借用偽造的wav檔音訊。是使用兩個hash來做為識別項，若該識別項錯誤，影像則無法解密。
 
+## 使用的函式庫與框架
+* 界面設計：TocasUI
+* 桌面程式：electron.js
+* 播放器：wavesurfer.js
+* JS框架： Vue.js
+
 ## 常見問題
 * 在Windows上的圖片預覽工具或小畫家不支援BMP格式而無法檢視產生的BMP圖片？
 
