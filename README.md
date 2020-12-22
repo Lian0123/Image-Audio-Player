@@ -13,9 +13,9 @@ npm install
 npm run start
 ```
 
-## 直接執行(if not have electron2)
+## 直接執行(如果已有electron9的electron程式)
 ```
-npm run start1
+npm run start9
 ```
 
 ## 系統介紹
